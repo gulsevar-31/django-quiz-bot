@@ -9,7 +9,7 @@ from questions import QUESTIONS
 
 TOKEN = "8942962838:AAFEsKgf3h0FJ8LpSlvl97jYBDFg3266xfU" # O'zingizning to'liq tokeningizni yozing
 
-bot = Bot(token=TOKEN)
+bot = Bot(token=TOKEN) 
 dp = Dispatcher()
 
 # Har bir poll_id va uning to'g'ri javobini saqlash
