@@ -115,3 +115,22 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
+    import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+
+# Render port talab qilgani uchun soxta server
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot ishlayapti!")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
+    server.serve_forever()
+
+# Portni orqa fonda ishga tushiramiz
+threading.Thread(target=run_dummy_server, daemon=True).start() 
