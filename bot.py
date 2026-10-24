@@ -12,7 +12,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # 130 ta savol joylashgan fayl
 from questions import QUESTIONS  
 
-TOKEN = "8942962838:AAFEsKgf3h0FJ8LpSlvl97jYBDFg3266xfU"
+TOKEN = "8942962838:AAHtNWk-BGmAINSWDmPKVKOvZ05JbiWb6HY"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
