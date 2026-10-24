@@ -11,13 +11,13 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from questions import QUESTIONS  
 
-TOKEN = "8942962838:AAHtNwK-BGmAiNSWDmPKV0vZ05Jbiwb6HY" 
+# SHU YERGA BOTFATHER'DAN OLGAN YANGI TOKENINGIZNI YOZING
+TOKEN = "8942962838:AAGoJkJpQbLrZFpp9fAbdK_BiHCEU37GYHE"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Render port band bo'lib qolmasligi uchun
 class DummyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -41,18 +41,19 @@ async def start_quiz(message: types.Message, state: FSMContext):
     await state.update_data(current_question=0, score=0)
     await message.answer(f"Salom! Imtihonga tayyorgarlik uchun {len(QUESTIONS)} ta savoldan iborat test boshlandi. Omad! ❤️")
     
-    # 1-savolni alohida xavfsiz tarzda yuboramiz
     q = QUESTIONS[0]
-    try:
-        await message.answer_poll(
-            question=f"1-savol:\n{q['question']}",
-            options=q['options'],
-            correct_option_id=q['correct_option_id'],
-            type="quiz",
-            is_anonymous=False
-        )
-    except Exception as e:
-        logging.error(f"Savol yuborishda xato: {e}")
+    await message.answer_poll(
+        question=f"1-savol:\n{q['question']}",
+        options=q['options'],
+        correct_option_id=q['correct_option_id'],
+        type="quiz",
+        is_anonymous=False
+    )
+
+@dp.poll_answer()
+async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSNContext if 'FSNContext' in globals() else FSMContext):
+    # FSM context uchun
+    pass
 
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
@@ -92,7 +93,6 @@ async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
             await state.clear()
 
 async def main():
-    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
