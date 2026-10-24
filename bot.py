@@ -1,13 +1,12 @@
 import os
-import asyncio
 import logging
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import threading
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiohttp import web
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 # 130 ta savol joylashgan fayl
 from questions import QUESTIONS  
@@ -18,19 +17,9 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Render port talabini qondirish uchun soxta HTTP server
-class DummyHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot ishlayapti!")
-
-def run_dummy_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(('0.0.0.0', port), DummyHandler)
-    server.serve_forever()
-
-threading.Thread(target=run_dummy_server, daemon=True).start()
+WEBHOOK_HOST = "https://django-quiz-bot-1.onrender.com"
+WEBHOOK_PATH = f"/bot/{TOKEN}"
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 class QuizState(StatesGroup):
     current_question = State()
@@ -87,10 +76,23 @@ async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
         await state.update_data(current_question=index, score=score)
         await send_question(poll_answer.user.id, state)
 
-async def main():
-    # Eski webhookni o'chirib, pollingni toza boshlaymiz
+async def on_startup(bot: Bot):
+    # Eski webhooklarni tozalab, yangisini o'rnatamiz
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    await bot.set_webhook(WEBHOOK_URL)
+
+def main():
+    app = web.Application()
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+    dp.startup.register(on_startup)
+    
+    port = int(os.environ.get("PORT", 10000))
+    web.run_app(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
