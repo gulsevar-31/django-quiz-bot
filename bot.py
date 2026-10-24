@@ -9,7 +9,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 
-# 130 ta savol joylashgan fayl
 from questions import QUESTIONS  
 
 TOKEN = "8942962838:AAHtNwK-BGmAiNSWDmPKV0vZ05Jbiwb6HY" 
@@ -18,12 +17,12 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Render port talabini qondirish uchun oddiy HTTP server
+# Render port band bo'lib qolmasligi uchun
 class DummyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot ishlayapti!")
+        self.wfile.write(b"OK")
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
@@ -42,14 +41,18 @@ async def start_quiz(message: types.Message, state: FSMContext):
     await state.update_data(current_question=0, score=0)
     await message.answer(f"Salom! Imtihonga tayyorgarlik uchun {len(QUESTIONS)} ta savoldan iborat test boshlandi. Omad! ❤️")
     
+    # 1-savolni alohida xavfsiz tarzda yuboramiz
     q = QUESTIONS[0]
-    await message.answer_poll(
-        question=f"1-savol:\n{q['question']}",
-        options=q['options'],
-        correct_option_id=q['correct_option_id'],
-        type="quiz",
-        is_anonymous=False
-    )
+    try:
+        await message.answer_poll(
+            question=f"1-savol:\n{q['question']}",
+            options=q['options'],
+            correct_option_id=q['correct_option_id'],
+            type="quiz",
+            is_anonymous=False
+        )
+    except Exception as e:
+        logging.error(f"Savol yuborishda xato: {e}")
 
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
