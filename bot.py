@@ -8,7 +8,7 @@ from aiogram.filters import Command
 from questions import QUESTIONS  # 130 ta savol joylashgan fayl
 
 # Tokeningizni shu yerga yozing
-TOKEN = "7835154388:AAH8N_153hUqP1C8Vp4uFj1JvW_X2Z1K3u0"
+TOKEN = "8942962838:AAFEsKgf3h0FJ8LpSlvl97jYBDFg3266xfU"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
