@@ -1,35 +1,25 @@
 import os
-import asyncio
 import logging
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import threading
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiohttp import web
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 from questions import QUESTIONS  
 
-# SHU YERGA BOTFATHER'DAN OLGAN YANGI TOKENINGIZNI YOZING
-TOKEN = "8942962838:AAGoJkJpQbLrZFpp9fAbdK_BiHCEU37GYHE"
+# BotFather'dan olgan YANGI tokeningizni shu yerga yozing
+TOKEN = "8953951553:AAG5ZEBmXgHfVIR44jpGTGAKYylTyfMISCg"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-class DummyHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"OK")
-
-def run_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(('0.0.0.0', port), DummyHandler)
-    server.serve_forever()
-
-threading.Thread(target=run_server, daemon=True).start()
+WEBHOOK_HOST = "https://django-quiz-bot-1.onrender.com"
+WEBHOOK_PATH = f"/bot/{TOKEN}"
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 class QuizState(StatesGroup):
     current_question = State()
@@ -49,11 +39,6 @@ async def start_quiz(message: types.Message, state: FSMContext):
         type="quiz",
         is_anonymous=False
     )
-
-@dp.poll_answer()
-async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSNContext if 'FSNContext' in globals() else FSMContext):
-    # FSM context uchun
-    pass
 
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
@@ -92,8 +77,22 @@ async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
             )
             await state.clear()
 
-async def main():
-    await dp.start_polling(bot)
+async def on_startup(bot: Bot):
+    await bot.delete_webhook(drop_pending_updates=True)
+    await bot.set_webhook(WEBHOOK_URL)
+
+def main():
+    app = web.Application()
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+    dp.startup.register(on_startup)
+    
+    port = int(os.environ.get("PORT", 10000))
+    web.run_app(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    main()
