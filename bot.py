@@ -108,7 +108,4 @@ async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
         await send_next_question(poll_answer, state)
 
 async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    await dp.start_polling(bot, drop_pending_updates=True) 
