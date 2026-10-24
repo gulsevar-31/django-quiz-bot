@@ -11,14 +11,12 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 # 130 ta savol joylashgan fayl
 from questions import QUESTIONS  
 
-# @BotFather'dan olgan YANGI tokeningizni shu yerga yozing
-TOKEN = "8942962838:AAHtNWk-BGmAINSWDmPKVKOvZ05JbiWb6HY"
+TOKEN = "8942962838:AAGoJkJpQbLrZFpp9fAbdK_BiHCEU37GYHE"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Render'dagi web xizmat manzilingiz
 WEBHOOK_HOST = "https://django-quiz-bot-1.onrender.com"
 WEBHOOK_PATH = f"/bot/{TOKEN}"
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
@@ -27,35 +25,25 @@ class QuizState(StatesGroup):
     current_question = State()
     score = State()
 
-async def send_next_question(event, state: FSMContext):
+async def send_question(chat_id: int, state: FSMContext):
     data = await state.get_data()
     index = data.get("current_question", 0)
     
     if index < len(QUESTIONS):
         q = QUESTIONS[index]
-        if isinstance(event, types.Message):
-            await event.answer_poll(
-                question=f"{index+1}-savol:\n{q['question']}",
-                options=q['options'],
-                correct_option_id=q['correct_option_id'],
-                type="quiz",
-                is_anonymous=False
-            )
-        elif isinstance(event, types.PollAnswer):
-            await bot.send_poll(
-                chat_id=event.user.id,
-                question=f"{index+1}-savol:\n{q['question']}",
-                options=q['options'],
-                correct_option_id=q['correct_option_id'],
-                type="quiz",
-                is_anonymous=False
-            )
+        await bot.send_poll(
+            chat_id=chat_id,
+            question=f"{index+1}-savol:\n{q['question']}",
+            options=q['options'],
+            correct_option_id=q['correct_option_id'],
+            type="quiz",
+            is_anonymous=False
+        )
     else:
         score = data.get("score", 0)
         total = len(QUESTIONS)
         percentage = round((score / total) * 100, 1) if total > 0 else 0
         
-        chat_id = event.chat.id if isinstance(event, types.Message) else event.user.id
         await bot.send_message(
             chat_id=chat_id,
             text=f"🏁 **Test yakunlandi!**\n\n"
@@ -70,8 +58,8 @@ async def send_next_question(event, state: FSMContext):
 async def start_quiz(message: types.Message, state: FSMContext):
     await state.clear()
     await state.update_data(current_question=0, score=0)
-    await message.answer(f"Salom! Imtihonga tayyorgarlik uchun {len(QUESTIONS)} ta savoldan iborat test boshlandi. Omad!")
-    await send_next_question(message, state)
+    await message.answer(f"Salom! Imtihonga tayyorgarlik uchun {len(QUESTIONS)} ta savoldan iborat test boshlandi. Omad! ❤️")
+    await send_question(message.chat.id, state)
 
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
@@ -86,7 +74,7 @@ async def handle_poll_answer(poll_answer: types.PollAnswer, state: FSMContext):
         
         index += 1
         await state.update_data(current_question=index, score=score)
-        await send_next_question(poll_answer, state)
+        await send_question(poll_answer.user.id, state)
 
 async def on_startup(bot: Bot):
     await bot.set_webhook(WEBHOOK_URL)
